@@ -1,0 +1,57 @@
+import telebot
+import requests
+from bs4 import BeautifulSoup
+from fake_useragent import UserAgent
+
+bot = telebot.TeleBot('6640741241:AAFDI-UyYlaemBqakknqHOv2jiwJ377SeeM')
+
+def parse(url):
+    user = UserAgent()
+    headers = {'User-Agent': user.random}
+
+    page = requests.get(url, headers=headers)
+    soup = BeautifulSoup(page.text, 'html.parser')
+    seria = soup.find('span', class_="app-catalog-nhng7j e1l49rf80")
+
+    brand = soup.find('span', class_="app-catalog-nhng7j e1l49rf80")
+
+    display = soup.find('span', class_="app-catalog-kwpt08 eetknoe0")
+
+    price = soup.find('span', class_="e1j9birj0 e106ikdt0 app-catalog-1f8xctp e1gjr6xo0")
+
+    pamyat = soup.find_all('span', class_="app-catalog-kwpt08 eetknoe0")[2]
+
+    processor = soup.find_all('span', class_="app-catalog-kwpt08 eetknoe0")[1]
+    razmer = soup.find_all('span', class_="app-catalog-kwpt08 eetknoe0")[5]
+    razmer = razmer.text
+    brand = brand.text
+    display = display.text
+    pamyat = pamyat.text
+    processor = processor.text
+
+    return razmer, brand, display, pamyat, processor
+
+@bot.message_handler(commands=['start'])
+def start_message(message):
+    bot.send_message(message.chat.id, 'Привет, я бот для парсинга данных о разной технике!')
+    
+@bot.message_handler(commands=['commands'])
+def commands_message(message):
+    bot.send_message(message.chat.id, 'Доступные команды:\n/start - начать диалог\n/work - введите ссылку на парсинг\n/commands - вывести доступные команды')
+
+@bot.message_handler(commands=['work'])
+def work_message(message):
+    bot.send_message(message.chat.id, 'Введите ссылку на парсинг:')
+
+@bot.message_handler(func=lambda message: True)
+def handle_message(message):
+    if message.text.startswith('https://www.citilink.ru/'):
+        ssylka = message.text
+
+        razmer, brand, display, pamyat, processor = parse(ssylka)
+
+        bot.send_message(message.chat.id, f"Размер: {razmer}\nБренд: {brand}\nЭкран: {display}\nПамять:  {pamyat}\n  Процессор:{processor}\n ")
+    else:
+        bot.send_message(message.chat.id, 'Некорректная ссылка!')
+
+bot.polling()
